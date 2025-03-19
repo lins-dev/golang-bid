@@ -10,7 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrDuplicatedEmailOrPassword = errors.New("invalid username or email already exists")
+var ErrDuplicatedEmailOrUsername = errors.New("invalid username or email already exists")
+var ErrInvalidCredentials = errors.New("invalid credentials")
 
 type UserService struct{
 	pool *pgxpool.Pool
@@ -47,10 +48,31 @@ func (us *UserService) CreateUser(
 		if err != nil {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-				return pgstore.User{}, ErrDuplicatedEmailOrPassword
+				return pgstore.User{}, ErrDuplicatedEmailOrUsername
 			}
 			return pgstore.User{}, err
 		}
 
 		return user, nil
 	}
+
+func (us *UserService) AuthUser(ctx context.Context, email string, password string) (pgstore.User, error) {
+	user, err := us.queries.FindUserByEmail(ctx, email)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return pgstore.User{}, ErrInvalidCredentials
+		}
+		return pgstore.User{}, err
+	}
+
+	err = bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return pgstore.User{}, ErrInvalidCredentials
+		}
+		return pgstore.User{}, err
+	}
+
+	return pgstore.User{}, nil
+}
