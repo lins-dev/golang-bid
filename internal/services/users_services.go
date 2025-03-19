@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lins-dev/golang-bid.git/internal/store/pgstore"
@@ -74,5 +75,14 @@ func (us *UserService) AuthUser(ctx context.Context, email string, password stri
 		return pgstore.User{}, err
 	}
 
-	return pgstore.User{}, nil
+	return user, nil
+}
+
+func (us *UserService) FindUserByUuid(ctx context.Context, user_uuid uuid.UUID) (pgstore.User, error) {
+	user, err := us.queries.GetUserByUuid(ctx, user_uuid)
+	if err != nil {
+		return pgstore.User{}, err
+	}
+
+	return user, nil
 }

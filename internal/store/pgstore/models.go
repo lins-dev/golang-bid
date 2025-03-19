@@ -5,23 +5,37 @@
 package pgstore
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Product struct {
+	ID          int32     `json:"id"`
+	Uuid        uuid.UUID `json:"uuid"`
+	SellerID    int32     `json:"seller_id"`
+	ProductName string    `json:"product_name"`
+	Description string    `json:"description"`
+	Price       int32     `json:"price"`
+	AuctionEnd  time.Time `json:"auction_end"`
+	IsSold      bool      `json:"is_sold"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
 type Session struct {
-	Token  string             `json:"token"`
-	Data   []byte             `json:"data"`
-	Expiry pgtype.Timestamptz `json:"expiry"`
+	Token  string    `json:"token"`
+	Data   []byte    `json:"data"`
+	Expiry time.Time `json:"expiry"`
 }
 
 type User struct {
-	ID           int32              `json:"id"`
-	Uuid         uuid.UUID          `json:"uuid"`
-	UserName     string             `json:"user_name"`
-	Email        string             `json:"email"`
-	PasswordHash []byte             `json:"password_hash"`
-	Bio          string             `json:"bio"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	ID           int32     `json:"id"`
+	Uuid         uuid.UUID `json:"uuid"`
+	UserName     string    `json:"user_name"`
+	Email        string    `json:"email"`
+	PasswordHash []byte    `json:"password_hash"`
+	Bio          string    `json:"bio"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }

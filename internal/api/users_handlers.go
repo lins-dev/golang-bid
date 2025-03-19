@@ -12,7 +12,7 @@ import (
 func (api *Api) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 	data, problems, err := jsonutils.DecodeValidJson[user.CreateUserReq](r)
 	if err != nil {
-		_ = jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, problems)
+		jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, problems)
 		return
 	}
 	user, err := api.UserService.CreateUser(
@@ -25,14 +25,14 @@ func (api *Api) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, services.ErrDuplicatedEmailOrUsername) {
-			_ = jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, map[string]any {
+			jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, map[string]any {
 				"error": "invalid email or user_name",
 			})
 			return
 		}
 	}
 
-	_ = jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, map[string]any {
+	jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, map[string]any {
 		"user": user,
 	})
 
@@ -41,17 +41,17 @@ func (api *Api) handleSignupUser(w http.ResponseWriter, r *http.Request) {
 func (api *Api) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	data, problems, err := jsonutils.DecodeValidJson[user.LoginUserReq](r)
 	if err != nil {
-		_ = jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, problems)
+		jsonutils.EncodeJson(w, r, http.StatusUnprocessableEntity, problems)
 	}
 	user, err :=  api.UserService.AuthUser(r.Context(), data.Email, data.Password)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidCredentials) {
-			_ = jsonutils.EncodeJson(w, r, http.StatusBadRequest, map[string]any {
+			jsonutils.EncodeJson(w, r, http.StatusBadRequest, map[string]any {
 				"error": "invalid email or password",
 			})
 			return
 		}
-		_ = jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any {
+		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any {
 			"error": "unexpected internal server error",
 		})
 		return
@@ -65,8 +65,9 @@ func (api *Api) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	api.Sessions.Put(r.Context(), "AuthUserUuid", user.Uuid)
-	_ = jsonutils.EncodeJson(w, r, http.StatusOK, map[string]any{
+	jsonutils.EncodeJson(w, r, http.StatusOK, map[string]any{
 		"msg": "login successfully",
+		"user": user,
 	})
 }
 
