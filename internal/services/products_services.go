@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lins-dev/golang-bid.git/internal/store/pgstore"
 )
@@ -43,5 +45,16 @@ func (ps *ProductService) CreateProduct(
 		return pgstore.Product{}, err
 	}
 
+	return product, nil
+}
+
+func (ps *ProductService) FindProductByUuid(ctx context.Context, productUuid uuid.UUID) (pgstore.Product, error) {
+	product, err := ps.queries.GetProductByUuid(ctx, productUuid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return pgstore.Product{}, ErrProductNotFound
+		}
+		return pgstore.Product{}, err
+	}
 	return product, nil
 }

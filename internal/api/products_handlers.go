@@ -18,11 +18,8 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userUuid, ok := api.Sessions.Get(r.Context(), "AuthUserUuid").(uuid.UUID)
-	userString, ok2 := api.Sessions.Get(r.Context(), "AuthUserUuid").(string)
-	slog.Info("log info", "userUuid", userString)
 	slog.Info("log info", "userUuid", userUuid)
 	slog.Info("log info", "user uuid ok", ok)
-	slog.Info("log info", "user uuid ok", ok2)
 	if !ok {
 		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
 			"error": "unexpected internal error",
