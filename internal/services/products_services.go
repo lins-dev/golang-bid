@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,6 +13,8 @@ type ProductService struct{
 	pool *pgxpool.Pool
 	queries *pgstore.Queries
 }
+
+var ErrProductNotFound = errors.New("product not found")
 
 func NewProductService(pool *pgxpool.Pool) ProductService {
 	return ProductService{
