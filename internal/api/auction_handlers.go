@@ -19,7 +19,7 @@ func (api *Api) handleSubscribeUserToAuction(w http.ResponseWriter, r *http.Requ
 		})
 	}
 	
-	_, err = api.UserService.FindUserByUuid(r.Context(), productUuid)
+	_, err = api.ProductService.FindProductByUuid(r.Context(), productUuid)
 	if err != nil {
 		if errors.Is(err, services.ErrProductNotFound) {
 			jsonutils.EncodeJson(w, r, http.StatusNotFound, map[string]any {
@@ -28,7 +28,7 @@ func (api *Api) handleSubscribeUserToAuction(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
-			"error": "unexpected internal error",
+			"error": "unexpected internal error in find user",
 		})
 		return
 	}
@@ -36,21 +36,47 @@ func (api *Api) handleSubscribeUserToAuction(w http.ResponseWriter, r *http.Requ
 	userUuid, ok := api.Sessions.Get(r.Context(), "AuthUserUuid").(uuid.UUID)
 	if !ok {
 		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
-			"error": "unexpected internal error",
+			"error": "unexpected internal error get user uuid",
 		})
+		return
 	}
 	// CODE WITH ERROR
 	// RESOLVE THIS PROBLEM IS PRIORITY
 	user, err := api.UserService.FindUserByUuid(r.Context(), userUuid)
-	connection, err := api.WsUpgrader.Upgrade(w, r, nil)
-	defer close(connection)
 	if err != nil {
-		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
-			"error": "could not upgrade connection to a websocket",
+		jsonutils.EncodeJson(w, r, http.StatusNotFound, map[string]any{
+			"error": "user not found",
 		})
 		return
 	}
 
+	api.AuctionLobby.Lock()
+	room, ok := api.AuctionLobby.Rooms[productUuid]
+	api.AuctionLobby.Unlock()
+	
+	if !ok {
+		jsonutils.EncodeJson(w, r, http.StatusBadRequest, map[string]any{
+			"msg" : "the auction has ended",
+		})
+		return
+	}
 
+	conn, err := api.WsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		jsonutils.EncodeJson(w, r, http.StatusInternalServerError, map[string]any{
+			"message": "could not upgrade connection to a websocket protocol",
+			"error": err.Error(),
+		})
+		return
+	}
+	client := services.NewClient(room, conn, user.Uuid, user.ID)
+
+	room.Register <- client
+	// go client.ReadEventLoop()
+	// go client.WriteEventLoop()
+
+	for {
+
+	}
 
 }

@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/lins-dev/golang-bid.git/internal/jsonutils"
+	"github.com/lins-dev/golang-bid.git/internal/services"
 	"github.com/lins-dev/golang-bid.git/internal/usecase/product"
 )
 
@@ -51,8 +53,17 @@ func (api *Api) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ctx, _ := context.WithDeadline(context.Background(), data.AuctionEnd)
+	auctionRoom := services.NewAuctionRoom(ctx, product.Uuid, product.ID, api.BidService)
+	
+	go auctionRoom.Run()
+
+	api.AuctionLobby.Lock()
+	api.AuctionLobby.Rooms[product.Uuid] = auctionRoom
+	api.AuctionLobby.Unlock()
+
 	jsonutils.EncodeJson(w, r, http.StatusCreated, map[string]any{
-		"msg": "product created with successfully",
+		"msg": "product created and auction has started",
 		"product": product,
 	})
 }
