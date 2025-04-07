@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,12 +71,12 @@ func (bs *BidsService) PlaceBid(
 			return pgstore.Bid{}, err
 		}
 	}
-
-	if product.Price > args.BidAmount {
+	slog.Info("Log of bids", "args.BidAmount", args.BidAmount, "product.Price", product.Price, "mostValueBid.BidAmount", mostValueBid.BidAmount)
+	if args.BidAmount < product.Price {
 		return pgstore.Bid{}, ErrNewBidLowerThanBasePrice
 	}
 
-	if mostValueBid.BidAmount > args.BidAmount {
+	if args.BidAmount < mostValueBid.BidAmount {
 		return pgstore.Bid{}, ErrNewBidLowerThanPrevious
 	}
 
